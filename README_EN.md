@@ -36,6 +36,7 @@ Luban standardizes the game configuration development workflow, which can greatl
 
 - [Official Documentation](https://www.datable.cn/)
 - [Quick Start](https://www.datable.cn/docs/beginner/quickstart)
+- [Directory-backed table guide](docs/dir-table-en.md)
 - **Example Project** ([github](https://github.com/focus-creative-games/luban_examples)) ([gitee](https://gitee.com/focus-creative-games/luban_examples) )
 
 ## Support and contact
