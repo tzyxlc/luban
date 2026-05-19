@@ -22,6 +22,7 @@ using Luban.CustomBehaviour;
 using Luban.Datas;
 using Luban.Defs;
 using Luban.Types;
+using Luban.TypeVisitors;
 using Luban.Utils;
 using System.Globalization;
 
@@ -100,13 +101,39 @@ public class DataLoaderManager
             throw new Exception($"dirTable:'{table.FullName}' fileValueField:'{valueFieldName}' not found in value type:'{table.ValueTType.DefBean.FullName}'");
         }
         TType valueFieldType = valueField.CType;
-        if (valueFieldType is not TList and not TArray)
+        if (valueFieldType is not TList and not TArray and not TMap)
         {
-            throw new Exception($"dirTable:'{table.FullName}' fileValueField:'{valueFieldName}' must be list or array type");
+            throw new Exception($"dirTable:'{table.FullName}' fileValueField:'{valueFieldName}' must be list, array, or map type");
         }
         if (valueFieldType.ElementType is not TBean elementBeanType)
         {
             throw new Exception($"dirTable:'{table.FullName}' fileValueField:'{valueFieldName}' element type must be bean");
+        }
+        string valueKeyFieldName = table.GetTag("fileValueKeyField")?.Trim();
+        DefField valueKeyField = null;
+        int valueKeyFieldIndex = -1;
+        if (valueFieldType is TMap mapType)
+        {
+            if (string.IsNullOrWhiteSpace(valueKeyFieldName))
+            {
+                throw new Exception($"dirTable:'{table.FullName}' map fileValueField:'{valueFieldName}' requires tag:'fileValueKeyField'");
+            }
+            if (!elementBeanType.DefBean.TryGetField(valueKeyFieldName, out valueKeyField, out valueKeyFieldIndex))
+            {
+                throw new Exception($"dirTable:'{table.FullName}' fileValueKeyField:'{valueKeyFieldName}' not found in element type:'{elementBeanType.DefBean.FullName}'");
+            }
+            if (valueKeyField.CType.IsNullable || !valueKeyField.CType.Apply(IsValidTableKeyTypeVisitor.Ins))
+            {
+                throw new Exception($"dirTable:'{table.FullName}' fileValueKeyField:'{valueKeyFieldName}' type:'{valueKeyField.Type}' can not be map key");
+            }
+            if (!valueKeyField.CType.Apply(DeepCompareTypeDefine.Ins, mapType.KeyType, new Dictionary<DefTypeBase, bool>(), new HashSet<DefTypeBase>()))
+            {
+                throw new Exception($"dirTable:'{table.FullName}' fileValueKeyField:'{valueKeyFieldName}' type:'{valueKeyField.Type}' does not match fileValueField:'{valueFieldName}' key type:'{mapType.KeyType.Apply(RawDefineTypeNameVisitor.Ins)}'");
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(valueKeyFieldName))
+        {
+            throw new Exception($"dirTable:'{table.FullName}' fileValueKeyField only supports map fileValueField");
         }
 
         string inputDataDir = GenerationContext.GetInputDataPath();
@@ -116,7 +143,7 @@ public class DataLoaderManager
             var (actualFile, subAssetName) = FileUtil.SplitFileAndSheetName(FileUtil.Standardize(inputFile));
             foreach (var atomFile in FileUtil.GetFileOrDirectory(inputDataDir, Path.Combine(inputDataDir, actualFile)))
             {
-                tasks.Add(Task.Run(() => LoadDirTableFile(table, atomFile, subAssetName, keyType, keyFieldIndex, valueFieldIndex, valueFieldType, elementBeanType)));
+                tasks.Add(Task.Run(() => LoadDirTableFile(table, atomFile, subAssetName, keyType, keyFieldIndex, valueFieldIndex, valueFieldType, elementBeanType, valueKeyFieldIndex)));
             }
         }
 
@@ -129,7 +156,7 @@ public class DataLoaderManager
     }
 
     private Record LoadDirTableFile(DefTable table, string atomFile, string subAssetName, string keyType, int keyFieldIndex,
-        int valueFieldIndex, TType valueFieldType, TBean elementBeanType)
+        int valueFieldIndex, TType valueFieldType, TBean elementBeanType, int valueKeyFieldIndex)
     {
         var records = LoadTableFile(elementBeanType, atomFile, subAssetName, new Dictionary<string, string>());
         string fileNameWithoutExt = Path.GetFileNameWithoutExtension(atomFile);
@@ -137,7 +164,7 @@ public class DataLoaderManager
 
         var fields = new DType[table.ValueTType.DefBean.HierarchyFields.Count];
         fields[keyFieldIndex] = key;
-        fields[valueFieldIndex] = CreateDirTableValueCollection(valueFieldType, records);
+        fields[valueFieldIndex] = CreateDirTableValueCollection(table, valueFieldType, records, valueKeyFieldIndex);
 
         for (int i = 0; i < fields.Length; i++)
         {
@@ -150,15 +177,30 @@ public class DataLoaderManager
         return new Record(new DBean(table.ValueTType, table.ValueTType.DefBean, fields.ToList()), atomFile, null);
     }
 
-    private static DType CreateDirTableValueCollection(TType valueFieldType, List<Record> records)
+    private static DType CreateDirTableValueCollection(DefTable table, TType valueFieldType, List<Record> records, int valueKeyFieldIndex)
     {
         var datas = records.Select(r => (DType)r.Data).ToList();
         return valueFieldType switch
         {
             TList listType => new DList(listType, datas),
             TArray arrayType => new DArray(arrayType, datas),
+            TMap mapType => CreateDirTableValueMap(table, mapType, records, valueKeyFieldIndex),
             _ => throw new NotSupportedException(),
         };
+    }
+
+    private static DMap CreateDirTableValueMap(DefTable table, TMap valueFieldType, List<Record> records, int valueKeyFieldIndex)
+    {
+        var datas = new Dictionary<DType, DType>();
+        foreach (var record in records)
+        {
+            var key = record.Data.Fields[valueKeyFieldIndex];
+            if (!datas.TryAdd(key, record.Data))
+            {
+                throw new Exception($"dirTable:'{table.FullName}' map 的 key:{key} 重复");
+            }
+        }
+        return new DMap(valueFieldType, datas);
     }
 
     private static string GetRequiredTableTag(DefTable table, string tagName)
