@@ -36,6 +36,7 @@ Since **5.0.0**, Luban is **AI Native**: official Agent Skills, machine-readable
 
 - [Official Documentation](https://www.datable.cn/en/docs/intro)
 - [Quick Start](https://www.datable.cn/en/docs/guide/install)
+- [Directory-backed table guide](docs/dir-table-en.md)
 - [AI support (Skills / Agent / MCP / schema-json)](https://www.datable.cn/docs/ai/overview)
 - [What's new in 5.x (vs 4.x)](https://www.datable.cn/docs/other/whats-new-5.x)
 - **Example Project** ([github](https://github.com/focus-creative-games/luban_examples)) ([gitee](https://gitee.com/focus-creative-games/luban_examples))
