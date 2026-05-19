@@ -1,6 +1,6 @@
 # 目录表 dirTable
 
-`dirTable` 用于把一个目录下结构相同的多个数据表合并成一张 map 表。每个文件会生成一条外层记录，文件名去掉扩展名后作为 key，文件内的数据行会写入外层记录的列表或数组字段。
+`dirTable` 用于把一个目录下结构相同的多个数据表合并成一张 map 表。每个文件会生成一条外层记录，文件名去掉扩展名后作为 key，文件内的数据行会写入外层记录的列表、数组或 map 字段。
 
 例如目录结构：
 
@@ -18,7 +18,7 @@ Datas/cfg/level/1003.xlsx
 
 | full_name | value_type | read_schema_from_file | input | index | mode | tags |
 | --- | --- | --- | --- | --- | --- | --- |
-| cfg.Tblevels | cfg.levelfile | false | cfg/level | level_id | map | dirTable#fileKeyType=int32#fileKeyField=level_id#fileValueField=nodes |
+| cfg.Tblevels | cfg.levelfile | false | cfg/level | level_id | map | dirTable#fileKeyType=int32#fileKeyField=level_id#fileValueField=nodes#fileValueKeyField=id |
 
 字段含义：
 
@@ -35,7 +35,8 @@ Datas/cfg/level/1003.xlsx
 - `dirTable`：启用目录表加载。
 - `fileKeyType`：文件名 key 的类型。
 - `fileKeyField`：外层记录中接收文件名 key 的字段。
-- `fileValueField`：外层记录中接收文件内数据行列表的字段。
+- `fileValueField`：外层记录中接收文件内数据行的列表、数组或 map 字段。
+- `fileValueKeyField`：当 `fileValueField` 是 map 时必填，表示用行记录中的哪个字段作为 map key。
 
 ## Bean 定义
 
@@ -44,7 +45,7 @@ Datas/cfg/level/1003.xlsx
 | full_name | fields.name | fields.type | comment |
 | --- | --- | --- | --- |
 | cfg.levelfile | level_id | int | 关卡 ID |
-|  | nodes | list,cfg.levelnode | 当前文件的所有节点 |
+|  | nodes | map,int,cfg.levelnode | 当前文件的所有节点 |
 
 `cfg.levelnode` 仍然是目录内单个 xlsx 的行结构。
 

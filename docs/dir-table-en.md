@@ -1,6 +1,6 @@
 # Directory-Backed Tables
 
-`dirTable` loads multiple files with the same row schema from one directory into a single map table. Each file becomes one outer record. The file name without extension is used as the key, and the rows inside that file are written to a list or array field on the outer record.
+`dirTable` loads multiple files with the same row schema from one directory into a single map table. Each file becomes one outer record. The file name without extension is used as the key, and the rows inside that file are written to a list, array, or map field on the outer record.
 
 Example directory:
 
@@ -18,7 +18,7 @@ Add or update a row in `__tables__.xlsx`:
 
 | full_name | value_type | read_schema_from_file | input | index | mode | tags |
 | --- | --- | --- | --- | --- | --- | --- |
-| cfg.Tblevels | cfg.levelfile | false | cfg/level | level_id | map | dirTable#fileKeyType=int32#fileKeyField=level_id#fileValueField=nodes |
+| cfg.Tblevels | cfg.levelfile | false | cfg/level | level_id | map | dirTable#fileKeyType=int32#fileKeyField=level_id#fileValueField=nodes#fileValueKeyField=id |
 
 Field meanings:
 
@@ -35,7 +35,8 @@ Supported `tags` attributes:
 - `dirTable`: enables directory-backed loading.
 - `fileKeyType`: type used to parse the file-name key.
 - `fileKeyField`: field on the outer record that receives the file-name key.
-- `fileValueField`: list or array field on the outer record that receives rows loaded from each file.
+- `fileValueField`: list, array, or map field on the outer record that receives rows loaded from each file.
+- `fileValueKeyField`: required when `fileValueField` is a map; names the row field used as the map key.
 
 ## Bean Definition
 
@@ -44,7 +45,7 @@ Assume each `cfg/level/*.xlsx` file has row type `cfg.levelnode`. You also need 
 | full_name | fields.name | fields.type | comment |
 | --- | --- | --- | --- |
 | cfg.levelfile | level_id | int | level id |
-|  | nodes | list,cfg.levelnode | all nodes from the current file |
+|  | nodes | map,int,cfg.levelnode | all nodes from the current file |
 
 `cfg.levelnode` remains the row type of each xlsx file in the directory.
 
