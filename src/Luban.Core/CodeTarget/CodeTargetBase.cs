@@ -84,6 +84,16 @@ public abstract class CodeTargetBase : ICodeTarget
         return ns.Split('.').Any(IsPreserveKeyWords);
     }
 
+    protected virtual string GetNameForPreservedKeywordValidation(string name, NameLocation location)
+    {
+        return name;
+    }
+
+    private bool IsPreservedKeywordName(string name, NameLocation location)
+    {
+        return IsPreserveKeyWords(GetNameForPreservedKeywordValidation(name, location));
+    }
+
     protected virtual bool IsValidateName(string name, NameLocation location)
     {
         return !string.IsNullOrEmpty(name);
@@ -93,7 +103,7 @@ public abstract class CodeTargetBase : ICodeTarget
     {
         foreach (var table in ctx.ExportTables)
         {
-            if (IsPreserveKeyWords(table.Name))
+            if (IsPreservedKeywordName(table.Name, NameLocation.TableName))
             {
                 throw new LubanException("error.codegen.preserved_keyword", table.FullName);
             }
@@ -109,7 +119,7 @@ public abstract class CodeTargetBase : ICodeTarget
 
         foreach (var bean in ctx.ExportBeans)
         {
-            if (IsPreserveKeyWords(bean.Name))
+            if (IsPreservedKeywordName(bean.Name, NameLocation.BeanName))
             {
                 throw new LubanException("error.codegen.bean_preserved_keyword", bean.FullName);
             }
@@ -123,7 +133,7 @@ public abstract class CodeTargetBase : ICodeTarget
             }
             foreach (var field in bean.Fields)
             {
-                if (IsPreserveKeyWords(field.Name))
+                if (IsPreservedKeywordName(field.Name, NameLocation.BeanFieldName))
                 {
                     throw new LubanException("error.codegen.field_preserved_keyword", bean.FullName, field.Name);
                 }
@@ -136,7 +146,7 @@ public abstract class CodeTargetBase : ICodeTarget
 
         foreach (var @enum in ctx.ExportEnums)
         {
-            if (IsPreserveKeyWords(@enum.Name))
+            if (IsPreservedKeywordName(@enum.Name, NameLocation.EnumName))
             {
                 throw new LubanException("error.codegen.enum_preserved_keyword", @enum.FullName);
             }
@@ -150,7 +160,7 @@ public abstract class CodeTargetBase : ICodeTarget
             }
             foreach (var item in @enum.Items)
             {
-                if (IsPreserveKeyWords(item.Name))
+                if (IsPreservedKeywordName(item.Name, NameLocation.EnumItemName))
                 {
                     throw new LubanException("error.codegen.enum_item_preserved_keyword", @enum.FullName, item.Name);
                 }
