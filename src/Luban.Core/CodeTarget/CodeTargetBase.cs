@@ -83,6 +83,16 @@ public abstract class CodeTargetBase : ICodeTarget
         return ns.Split('.').Any(IsPreserveKeyWords);
     }
 
+    protected virtual string GetNameForPreservedKeywordValidation(string name, NameLocation location)
+    {
+        return name;
+    }
+
+    private bool IsPreservedKeywordName(string name, NameLocation location)
+    {
+        return IsPreserveKeyWords(GetNameForPreservedKeywordValidation(name, location));
+    }
+
     protected virtual bool IsValidateName(string name, NameLocation location)
     {
         return !string.IsNullOrEmpty(name);
@@ -92,7 +102,7 @@ public abstract class CodeTargetBase : ICodeTarget
     {
         foreach (var table in ctx.ExportTables)
         {
-            if (IsPreserveKeyWords(table.Name))
+            if (IsPreservedKeywordName(table.Name, NameLocation.TableName))
             {
                 throw new Exception($"the name of type `{table.FullName}` is preserved keyword");
             }
@@ -108,7 +118,7 @@ public abstract class CodeTargetBase : ICodeTarget
 
         foreach (var bean in ctx.ExportBeans)
         {
-            if (IsPreserveKeyWords(bean.Name))
+            if (IsPreservedKeywordName(bean.Name, NameLocation.BeanName))
             {
                 throw new Exception($"the name of bean `{bean.FullName}` is preserved keyword");
             }
@@ -122,7 +132,7 @@ public abstract class CodeTargetBase : ICodeTarget
             }
             foreach (var field in bean.Fields)
             {
-                if (IsPreserveKeyWords(field.Name))
+                if (IsPreservedKeywordName(field.Name, NameLocation.BeanFieldName))
                 {
                     throw new Exception($"the name of field `{bean.FullName}::{field.Name}` contains preserved keyword");
                 }
@@ -135,7 +145,7 @@ public abstract class CodeTargetBase : ICodeTarget
 
         foreach (var @enum in ctx.ExportEnums)
         {
-            if (IsPreserveKeyWords(@enum.Name))
+            if (IsPreservedKeywordName(@enum.Name, NameLocation.EnumName))
             {
                 throw new Exception($"the name of enum `{@enum.FullName}` is preserved keyword");
             }
@@ -149,7 +159,7 @@ public abstract class CodeTargetBase : ICodeTarget
             }
             foreach (var item in @enum.Items)
             {
-                if (IsPreserveKeyWords(item.Name))
+                if (IsPreservedKeywordName(item.Name, NameLocation.EnumItemName))
                 {
                     throw new Exception($"the name of enum item `{@enum.FullName}::{item.Name}` contains preserved keyword");
                 }

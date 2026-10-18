@@ -44,6 +44,18 @@ public abstract class CsharpCodeTargetBase : TemplateCodeTargetBase
 
     protected override IReadOnlySet<string> PreservedKeyWords => s_preservedKeyWords;
 
+    protected virtual bool BeanFieldsUsePropertyNames => true;
+
+    protected override string GetNameForPreservedKeywordValidation(string name, NameLocation location)
+    {
+        return location switch
+        {
+            NameLocation.BeanFieldName => BeanFieldsUsePropertyNames ? CodeStyle.FormatProperty(name) : CodeStyle.FormatField(name),
+            NameLocation.EnumItemName => CodeStyle.FormatEnumItemName(name),
+            _ => name,
+        };
+    }
+
     protected override string GetFileNameWithoutExtByTypeName(string name)
     {
         return name.Replace('.', '/');

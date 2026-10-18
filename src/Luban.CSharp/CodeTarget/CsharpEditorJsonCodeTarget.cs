@@ -30,6 +30,8 @@ namespace Luban.CSharp.CodeTarget;
 [CodeTarget("cs-editor-json")]
 public class CsharpEditorJsonCodeTarget : CsharpCodeTargetBase
 {
+    protected override bool BeanFieldsUsePropertyNames => false;
+
     public override void Handle(GenerationContext ctx, OutputFileManifest manifest)
     {
         var tasks = new List<Task<OutputFile>>();
